@@ -648,7 +648,7 @@
           <div class="skill-card h-100">
             <h5 class="mb-4">Tools & Soft Skills</h5>
             <div>
-              <span class="skill-badge">Responsive Design</span>
+              <span class="skill-badge">Data Preprocessing</span>
               <span class="skill-badge">UI/UX Dasar</span>
               <span class="skill-badge">Problem Solving</span>
               <span class="skill-badge">Teamwork</span>
@@ -657,9 +657,6 @@
               <span class="skill-badge">Microsoft Office</span>
               <span class="skill-badge">Canva / Figma</span>
             </div>
-            <p class="mt-4 mb-0 text-muted" style="line-height: 1.85;">
-              Bagian ini dapat Anda sesuaikan dengan kemampuan asli. Jangan menulis skill berlebihan. Dosen mungkin tidak peduli, recruiter bisa saja. Dunia memang suka jebakan sederhana seperti itu.
-            </p>
           </div>
         </div>
       </div>
@@ -822,64 +819,69 @@
     const githubUsernameInput = document.getElementById('githubUsername');
 
     async function loadGithubData(username = 'xoopx00h') {
-      githubProfileBox.className = 'loading-box';
-      githubProfileBox.textContent = 'Memuat data profil GitHub...';
-      githubRepos.innerHTML = '<div class="col-12"><div class="loading-box">Memuat repository...</div></div>';
-
-      try {
-        const [userResponse, repoResponse] = await Promise.all([
-          fetch(`https://api.github.com/users/${username}`),
-          fetch(`https://api.github.com/users/${username}/repos?sort=updated&per_page=4`)
-        ]);
-
-        if (!userResponse.ok || !repoResponse.ok) {
-          throw new Error('Username GitHub tidak ditemukan atau API sedang bermasalah.');
-        }
-
-        const userData = await userResponse.json();
-        const repoData = await repoResponse.json();
-
-        githubProfileBox.className = '';
-        githubProfileBox.innerHTML = `
-          <div class="d-flex align-items-center gap-3 mb-3">
-            <img src="${userData.avatar_url}" alt="Avatar GitHub" width="72" height="72" class="rounded-4 border" />
-            <div>
-              <h6 class="mb-1 fw-bold text-dark">${userData.name || userData.login}</h6>
-              <div class="text-muted">@${userData.login}</div>
-            </div>
-          </div>
-          <p class="mb-3">${userData.bio || 'Pengguna GitHub aktif tanpa bio publik.'}</p>
-        `;
-
-        githubRepos.innerHTML = repoData.map(repo => `
-          <div class="col-md-6">
-            <div class="project-card h-100">
-              <div class="project-header pb-2">
-                <div class="project-icon"><i class="bi bi-github"></i></div>
-                <h5>${repo.name}</h5>
-                <p class="project-meta mb-2">
-                  Update terakhir: ${new Date(repo.updated_at).toLocaleDateString('id-ID')}
-                </p>
-              </div>
-              <div class="project-body">
-                <p>${repo.description || 'Belum ada deskripsi repository.'}</p>
-                ${repo.language ? `<span class="repo-tag">${repo.language}</span>` : ''}
-                <div class="mt-3">
-                  <a href="${repo.html_url}" target="_blank" class="btn btn-outline-primary btn-sm">
-                    Lihat Repository
-                  </a>
-                </div>
-              </div>
-            </div>
-          </div>
-        `).join('');
-
-      } catch (error) {
-        githubProfileBox.className = 'error-box';
-        githubProfileBox.textContent = error.message;
-        githubRepos.innerHTML = `<div class="col-12"><div class="error-box">${error.message}</div></div>`;
+    githubProfileBox.className = 'loading-box';
+    githubProfileBox.textContent = 'Memuat data profil GitHub...';
+    githubRepos.innerHTML = '<div class="col-12"><div class="loading-box">Memuat repository...</div></div>';
+  
+    try {
+      const [userResponse, repoResponse] = await Promise.all([
+        fetch(`https://api.github.com/users/${username}`),
+        fetch(`https://api.github.com/users/${username}/repos?sort=updated&per_page=4`)
+      ]);
+  
+      if (!userResponse.ok) {
+        throw new Error('Username GitHub tidak ditemukan.');
       }
+  
+      if (!repoResponse.ok) {
+        throw new Error('Repository GitHub gagal dimuat.');
+      }
+  
+      const userData = await userResponse.json();
+      const repoData = await repoResponse.json();
+  
+      githubProfileBox.className = '';
+      githubProfileBox.innerHTML = `
+        <div class="d-flex align-items-center gap-3 mb-3">
+          <img src="${userData.avatar_url}" alt="Avatar GitHub" width="72" height="72" class="rounded-4 border" />
+          <div>
+            <h6 class="mb-1 fw-bold text-dark">${userData.name || userData.login}</h6>
+            <div class="text-muted">@${userData.login}</div>
+          </div>
+        </div>
+        <p class="mb-3">${userData.bio || 'Pengguna GitHub aktif tanpa bio publik.'}</p>
+      `;
+  
+      if (!repoData.length) {
+        githubRepos.innerHTML = '<div class="col-12"><div class="error-box">Repository publik tidak ditemukan.</div></div>';
+        return;
+      }
+  
+      githubRepos.innerHTML = repoData.map(repo => `
+        <div class="col-md-6">
+          <div class="project-card h-100">
+            <div class="project-header pb-2">
+              <div class="project-icon"><i class="bi bi-github"></i></div>
+              <h5>${repo.name}</h5>
+              <p class="project-meta mb-2">Update terakhir: ${new Date(repo.updated_at).toLocaleDateString('id-ID')}</p>
+            </div>
+            <div class="project-body">
+              <p>${repo.description || 'Belum ada deskripsi repository.'}</p>
+              ${repo.language ? `<span class="repo-tag">${repo.language}</span>` : ''}
+              ${repo.stargazers_count ? `<span class="repo-tag">⭐ ${repo.stargazers_count}</span>` : ''}
+              <div class="mt-3">
+                <a href="${repo.html_url}" target="_blank" class="btn btn-outline-primary btn-sm">Lihat Repository</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    } catch (error) {
+      githubProfileBox.className = 'error-box';
+      githubProfileBox.textContent = error.message;
+      githubRepos.innerHTML = `<div class="col-12"><div class="error-box">${error.message}</div></div>`;
     }
+  }
 
     loadGithubBtn.addEventListener('click', () => {
       const username = githubUsernameInput.value.trim() || 'xoopx00h';
